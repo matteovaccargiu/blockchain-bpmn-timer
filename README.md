@@ -143,8 +143,6 @@ Steps:
 3. Deploy to your preferred network (testnets are fine) and execute the process by calling the generated functions in order.  
    When a timer is due, call its `trigger...()` function.
 
-> Detailed deployment/gas-measure steps are in `docs/SETUP.md`. Pre-computed gas and cost snapshots are in `data/gas-costs/` with aggregated results in `data/results/`.
-
 ---
 
 ## Static analysis (Slither)
@@ -156,8 +154,6 @@ If Slither is present, the parser automatically runs:
 You can control Slither via system properties:
 - `-Dslither.workingDir=.`  → directory where `node_modules` and the contract live
 - `-Dslither.remap='@openzeppelin=node_modules/@openzeppelin'`
-
-Reports are saved as `SecurityReport_<timestamp>.txt` and summarized in `docs/SECURITY.md`.
 
 ---
 
