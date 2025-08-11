@@ -1,4 +1,4 @@
-Replication package for the paper _“A Block-number Approach for BPMN Collaboration Process on Multi-Layer Blockchain Networks”_.  
+Replication package for the paper _“A Block-Number Approach for BPMN Collaboration Process on Multi-Layer Blockchain Networks”_.  
 This repository contains an interactive Java prototype that translates BPMN collaboration diagrams with **Timer Events** into Solidity smart contracts, plus the three reference scenarios and pre-generated contracts.
 
 > TL;DR — Run the parser, point it at a BPMN file, give it a contract name and the Ethereum addresses for each pool, and it will emit `ContractName.sol` and a `SecurityReport_*.txt`.
