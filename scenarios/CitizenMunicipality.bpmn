@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1p4gfs1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.31.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+  <bpmn:collaboration id="Collaboration_1wtcrjj">
+    <bpmn:extensionElements>
+      <zeebe:properties>
+        <zeebe:property />
+      </zeebe:properties>
+    </bpmn:extensionElements>
+    <bpmn:participant id="Participant_Citizen" name="Citizen" processRef="Process_Citizen" />
+    <bpmn:participant id="Participant_Municipality" name="Municipality" processRef="Process_Municipality" />
+    <bpmn:messageFlow id="Flow_RequestToMunicipality" sourceRef="Activity_SendRequestMunicipality" targetRef="Event_ReceiveRequest" />
+    <bpmn:messageFlow id="Flow_ResendCompleteRequest" sourceRef="Activity_CompleteRequestAndResend" targetRef="Event_ReceiveRequest" />
+    <bpmn:messageFlow id="Flow_SendDocuments" sourceRef="Activity_SendDocuments" targetRef="Activity_DocumentsReceived" />
+    <bpmn:messageFlow id="Flow_15DaysSendDocuments" sourceRef="Activity_ReturnRequestToCitizen" targetRef="Activity_CompleteRequestAndResend" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Citizen" isExecutable="true">
+    <bpmn:task id="Activity_SendRequestMunicipality" name="Send Request to Municipality">
+      <bpmn:incoming>Flow_StartToSendRequest</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Activity_DocumentsReceived" name="Documents Received">
+      <bpmn:outgoing>Flow_ReceiveDocsToFeedback</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_StartToSendRequest" sourceRef="Event_StartCitizen" targetRef="Activity_SendRequestMunicipality" />
+    <bpmn:sequenceFlow id="Flow_ReceiveDocsToFeedback" sourceRef="Activity_DocumentsReceived" targetRef="Activity_SendFeedback" />
+    <bpmn:sequenceFlow id="Flow_FeedbackToEnd" sourceRef="Activity_SendFeedback" targetRef="Event_EndCitizenProcess" />
+    <bpmn:startEvent id="Event_StartCitizen" name="Start Request">
+      <bpmn:outgoing>Flow_StartToSendRequest</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_SendFeedback" name="Send Feedback">
+      <bpmn:incoming>Flow_ReceiveDocsToFeedback</bpmn:incoming>
+      <bpmn:outgoing>Flow_FeedbackToEnd</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="Event_EndCitizenProcess">
+      <bpmn:incoming>Flow_FeedbackToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="Activity_CompleteRequestAndResend" name="Complete Request and Resend it" />
+  </bpmn:process>
+  <bpmn:process id="Process_Municipality" isExecutable="false">
+    <bpmn:intermediateCatchEvent id="Event_ReceiveRequest" name="Receive Request">
+      <bpmn:outgoing>Flow_ReceiveRequestToCheck</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_ReceiveRequest" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="Flow_Timer30No" name="No" sourceRef="Event_30DayDeadline" targetRef="Gateway_CheckDocuments" />
+    <bpmn:sequenceFlow id="Flow_Elaborate30DayTimer" sourceRef="Activity_ElaborateRequest" targetRef="Event_30DayDeadline" />
+    <bpmn:sequenceFlow id="Flow_RequestComplete" name="Yes" sourceRef="Gateway_CheckRequest" targetRef="Activity_ElaborateRequest" />
+    <bpmn:sequenceFlow id="Flow_RequestNotComplete" name="No" sourceRef="Gateway_CheckRequest" targetRef="Activity_ReturnRequestToCitizen" />
+    <bpmn:sequenceFlow id="Flow_ReceiveRequestToCheck" sourceRef="Event_ReceiveRequest" targetRef="Gateway_CheckRequest" />
+    <bpmn:intermediateCatchEvent id="Event_30DayDeadline" name="30 days (Deadline for Document Delivery)">
+      <bpmn:incoming>Flow_Elaborate30DayTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_Timer30No</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_30Days">
+        <bpmn:timeDuration>P30D</bpmn:timeDuration> 
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Activity_ElaborateRequest" name="Elaborate Request">
+      <bpmn:incoming>Flow_RequestComplete</bpmn:incoming>
+      <bpmn:outgoing>Flow_Elaborate30DayTimer</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_ReturnRequestToCitizen" name="Return Request to Citizen">
+      <bpmn:incoming>Flow_RequestNotComplete</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_CheckRequest" name="Request Complete?">
+      <bpmn:incoming>Flow_ReceiveRequestToCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_RequestNotComplete</bpmn:outgoing>
+      <bpmn:outgoing>Flow_RequestComplete</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_AssignNew15DayTimer" sourceRef="Activity_AssignNewOperator" targetRef="Event_15DayDeadline" />
+    <bpmn:sequenceFlow id="Flow_0e3yxb2" sourceRef="Event_15DayDeadline" targetRef="Activity_SendDocuments" />
+    <bpmn:exclusiveGateway id="Gateway_CheckDocuments" name="Documents Ready?">
+      <bpmn:incoming>Flow_Timer30No</bpmn:incoming>
+      <bpmn:outgoing>Flow_DocsNotReady</bpmn:outgoing>
+      <bpmn:outgoing>Flow_DocsReady</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_DocsNotReady" sourceRef="Gateway_CheckDocuments" targetRef="Activity_AssignNewOperator" />
+    <bpmn:sequenceFlow id="Flow_DocsReady" name="Yes" sourceRef="Gateway_CheckDocuments" targetRef="Activity_SendDocuments" />
+    <bpmn:intermediateCatchEvent id="Event_15DayDeadline" name="15 days (Extended Deadline)">
+      <bpmn:incoming>Flow_AssignNew15DayTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_0e3yxb2</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_15Days">
+        <bpmn:timeDuration>P15D</bpmn:timeDuration>  
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Activity_SendDocuments" name="Send Documents">
+      <bpmn:incoming>Flow_0e3yxb2</bpmn:incoming>
+      <bpmn:incoming>Flow_DocsReady</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Activity_AssignNewOperator" name="Assign New Operator">
+      <bpmn:incoming>Flow_DocsNotReady</bpmn:incoming>
+      <bpmn:outgoing>Flow_AssignNew15DayTimer</bpmn:outgoing>
+    </bpmn:task>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1wtcrjj">
+      <bpmndi:BPMNShape id="Participant_Citizen_di" bpmnElement="Participant_Citizen" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1110" height="160" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendRequestMunicipality_di" bpmnElement="Activity_SendRequestMunicipality">
+        <dc:Bounds x="360" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_DocumentsReceived_di" bpmnElement="Activity_DocumentsReceived">
+        <dc:Bounds x="940" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_StartCitizen_di" bpmnElement="Event_StartCitizen">
+        <dc:Bounds x="262" y="130" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="246" y="173" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendFeedback_di" bpmnElement="Activity_SendFeedback">
+        <dc:Bounds x="1090" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_EndCitizenProcess_di" bpmnElement="Event_EndCitizenProcess">
+        <dc:Bounds x="1242" y="130" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_CompleteRequestAndResend_di" bpmnElement="Activity_CompleteRequestAndResend">
+        <dc:Bounds x="660" y="108" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_StartToSendRequest_di" bpmnElement="Flow_StartToSendRequest">
+        <di:waypoint x="298" y="148" />
+        <di:waypoint x="360" y="148" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ReceiveDocsToFeedback_di" bpmnElement="Flow_ReceiveDocsToFeedback">
+        <di:waypoint x="1040" y="148" />
+        <di:waypoint x="1090" y="148" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FeedbackToEnd_di" bpmnElement="Flow_FeedbackToEnd">
+        <di:waypoint x="1190" y="148" />
+        <di:waypoint x="1242" y="148" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Municipality_di" bpmnElement="Participant_Municipality" isHorizontal="true">
+        <dc:Bounds x="190" y="280" width="1110" height="280" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_ReceiveRequest_di" bpmnElement="Event_ReceiveRequest">
+        <dc:Bounds x="392" y="361" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="369" y="404" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_30DayDeadline_di" bpmnElement="Event_30DayDeadline">
+        <dc:Bounds x="802" y="412" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="776" y="455" width="89" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ElaborateRequest_di" bpmnElement="Activity_ElaborateRequest">
+        <dc:Bounds x="660" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReturnRequestToCitizen_di" bpmnElement="Activity_ReturnRequestToCitizen">
+        <dc:Bounds x="660" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CheckRequest_di" bpmnElement="Gateway_CheckRequest" isMarkerVisible="true">
+        <dc:Bounds x="505" y="354" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="503" y="411" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CheckDocuments_di" bpmnElement="Gateway_CheckDocuments" isMarkerVisible="true">
+        <dc:Bounds x="885" y="405" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="882" y="462" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_15DayDeadline_di" bpmnElement="Event_15DayDeadline">
+        <dc:Bounds x="1202" y="466" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1195" y="509" width="51" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendDocuments_di" bpmnElement="Activity_SendDocuments">
+        <dc:Bounds x="1034" y="337" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_AssignNewOperator_di" bpmnElement="Activity_AssignNewOperator">
+        <dc:Bounds x="1034" y="444" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Timer30No_di" bpmnElement="Flow_Timer30No">
+        <di:waypoint x="838" y="430" />
+        <di:waypoint x="885" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="970" y="455" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Elaborate30DayTimer_di" bpmnElement="Flow_Elaborate30DayTimer">
+        <di:waypoint x="760" y="430" />
+        <di:waypoint x="802" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RequestComplete_di" bpmnElement="Flow_RequestComplete">
+        <di:waypoint x="555" y="379" />
+        <di:waypoint x="608" y="379" />
+        <di:waypoint x="608" y="430" />
+        <di:waypoint x="660" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="616" y="401" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RequestNotComplete_di" bpmnElement="Flow_RequestNotComplete">
+        <di:waypoint x="555" y="379" />
+        <di:waypoint x="608" y="379" />
+        <di:waypoint x="608" y="330" />
+        <di:waypoint x="660" y="330" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="616" y="346" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ReceiveRequestToCheck_di" bpmnElement="Flow_ReceiveRequestToCheck">
+        <di:waypoint x="428" y="379" />
+        <di:waypoint x="505" y="379" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AssignNew15DayTimer_di" bpmnElement="Flow_AssignNew15DayTimer">
+        <di:waypoint x="1134" y="484" />
+        <di:waypoint x="1202" y="484" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0e3yxb2_di" bpmnElement="Flow_0e3yxb2">
+        <di:waypoint x="1220" y="466" />
+        <di:waypoint x="1220" y="377" />
+        <di:waypoint x="1134" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DocsNotReady_di" bpmnElement="Flow_DocsNotReady">
+        <di:waypoint x="935" y="430" />
+        <di:waypoint x="960" y="430" />
+        <di:waypoint x="960" y="484" />
+        <di:waypoint x="1034" y="484" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DocsReady_di" bpmnElement="Flow_DocsReady">
+        <di:waypoint x="935" y="430" />
+        <di:waypoint x="960" y="430" />
+        <di:waypoint x="960" y="377" />
+        <di:waypoint x="1034" y="377" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="970" y="398" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RequestToMunicipality_di" bpmnElement="Flow_RequestToMunicipality">
+        <di:waypoint x="410" y="188" />
+        <di:waypoint x="410" y="361" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ResendCompleteRequest_di" bpmnElement="Flow_ResendCompleteRequest">
+        <di:waypoint x="660" y="148" />
+        <di:waypoint x="550" y="148" />
+        <di:waypoint x="550" y="260" />
+        <di:waypoint x="410" y="260" />
+        <di:waypoint x="410" y="361" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SendDocuments_di" bpmnElement="Flow_SendDocuments">
+        <di:waypoint x="1084" y="337" />
+        <di:waypoint x="1084" y="260" />
+        <di:waypoint x="990" y="260" />
+        <di:waypoint x="990" y="188" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15DaysSendDocuments_di" bpmnElement="Flow_15DaysSendDocuments">
+        <di:waypoint x="710" y="290" />
+        <di:waypoint x="710" y="188" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
