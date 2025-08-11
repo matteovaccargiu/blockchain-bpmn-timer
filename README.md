@@ -19,12 +19,6 @@ blockchain-bpmn-timer
 │   ├── CitizenMunicipality.bpmn               # Municipal document request
 │   ├── PolicyholderInsuranceCompany.bpmn      # Insurance policy application
 │   └── StudentProfessorSecretary.bpmn         # Academic examination process
-├── data/
-│   ├── gas-costs/                   # Experimental gas / price snapshots
-│   └── results/                     # Aggregated cost analysis
-├── docs/
-│   ├── SETUP.md                     # Detailed setup (JDK/Maven/Slither/Remix)
-│   └── SECURITY.md                  # Notes & reports from static analysis
 └── README.md                        # You are here
 ```
 
