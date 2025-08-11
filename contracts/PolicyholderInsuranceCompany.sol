@@ -38,8 +38,8 @@ contract PolicyholderInsuranceCompany is ReentrancyGuard, Ownable, Pausable {
     mapping(string => GatewayData) public gatewayMap;
 
     constructor() Ownable(msg.sender) Pausable() {
-        participantAddresses["Policyholder"] = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
-        participantAddresses["InsuranceCompany"] = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
+        participantAddresses["Policyholder"] = ;
+        participantAddresses["InsuranceCompany"] = ;
 
         elementStates["Event_StartPolicyholder"] = State.ENABLED;
 
