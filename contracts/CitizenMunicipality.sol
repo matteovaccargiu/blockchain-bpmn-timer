@@ -38,8 +38,8 @@ contract CitizenMunicipality is ReentrancyGuard, Ownable, Pausable {
     mapping(string => GatewayData) public gatewayMap;
 
     constructor() Ownable(msg.sender) Pausable() {
-        participantAddresses["Citizen"] = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
-        participantAddresses["Municipality"] = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
+        participantAddresses["Citizen"] = ;
+        participantAddresses["Municipality"] = ;
 
         elementStates["Event_StartCitizen"] = State.ENABLED;
 
