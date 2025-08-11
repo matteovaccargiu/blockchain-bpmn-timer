@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1p4gfs1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.31.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+  <bpmn:collaboration id="Collaboration_1wtcrjj">
+    <bpmn:extensionElements>
+      <zeebe:properties>
+        <zeebe:property />
+      </zeebe:properties>
+    </bpmn:extensionElements>
+    <bpmn:participant id="Participant_Policyholder" name="Policyholder" processRef="Process_Policyholder" />
+    <bpmn:participant id="Participant_InsuranceCompany" name="InsuranceCompany" processRef="Process_InsuranceCompany" />
+    <bpmn:messageFlow id="Flow_SubmitRequestToInsuranceCompany" sourceRef="Activity_SubmitRequestPolicy" targetRef="Activity_ReceiveRequest" />
+    <bpmn:messageFlow id="Flow_ResendAdditionalInfo" sourceRef="Activity_ProvideAdditionalInfo" targetRef="Activity_ReceiveRequest" />
+    <bpmn:messageFlow id="Flow_RequestMoreInfo" sourceRef="Activity_RequestMoreInfo" targetRef="Activity_ProvideAdditionalInfo" />
+    <bpmn:messageFlow id="Flow_SendProposal" sourceRef="Activity_SendPolicyProposal" targetRef="Activity_ReceiveProposal" />
+    <bpmn:messageFlow id="Flow_SendPolicySigned" sourceRef="Activity_SendPolicySigned" targetRef="Activity_ReceivePolicySigned" />
+    <bpmn:messageFlow id="Flow_PrepareNewProposal" sourceRef="Activity_PrepareNewProposal" targetRef="Activity_PreparePolicyProposal" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Policyholder" isExecutable="true">
+    <bpmn:intermediateCatchEvent id="Event_5DayDeadline" name="5 days (Sign Deadline)">
+      <bpmn:outgoing>Flow_190bwvj</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_5Days">
+        <bpmn:timeDuration>P5D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="Flow_ReceiveProposal" sourceRef="Activity_ReceiveProposal" targetRef="Event_5DayDeadline" />
+    <bpmn:sequenceFlow id="Flow_StartToSubmitRequestPolicy" sourceRef="Event_StartPolicyholder" targetRef="Activity_SubmitRequestPolicy" />
+    <bpmn:task id="Activity_ProvideAdditionalInfo" name="Provide Additional Info" />
+    <bpmn:task id="Activity_ReceiveProposal" name="Receive Proposal">
+      <bpmn:outgoing>Flow_ReceiveProposal</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:startEvent id="Event_StartPolicyholder" name="Start Policyholder Process">
+      <bpmn:outgoing>Flow_StartToSubmitRequestPolicy</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_SubmitRequestPolicy" name="Submit Insurance Policy Request">
+      <bpmn:incoming>Flow_StartToSubmitRequestPolicy</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Activity_SendPolicySigned" name="Send Policy Signed">
+      <bpmn:incoming>Flow_0k1chus</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_190bwvj" sourceRef="Event_5DayDeadline" targetRef="Gateway_CheckSign" />
+    <bpmn:sequenceFlow id="Flow_0k1chus" name="Yes" sourceRef="Gateway_CheckSign" targetRef="Activity_SendPolicySigned">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{policySigned == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:task id="Activity_PrepareNewProposal" name="Prepare New Proposal">
+      <bpmn:incoming>Flow_1k4yc6b</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1k4yc6b" name="No" sourceRef="Gateway_CheckSign" targetRef="Activity_PrepareNewProposal">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{policySigned == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_CheckSign" name="Policy Signed?">
+      <bpmn:incoming>Flow_190bwvj</bpmn:incoming>
+      <bpmn:outgoing>Flow_0k1chus</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1k4yc6b</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+  </bpmn:process>
+  <bpmn:process id="Process_InsuranceCompany" isExecutable="false">
+    <bpmn:sequenceFlow id="Flow_EvaluateTo7DayTimer" sourceRef="Activity_PreparePolicyProposal" targetRef="Event_7DayDeadline" />
+    <bpmn:sequenceFlow id="Flow_1vc3oj4" name="No" sourceRef="Gateway_CheckRequest" targetRef="Activity_RequestMoreInfo">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{requestComplete == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:task id="Activity_RequestMoreInfo" name="Request More Info">
+      <bpmn:incoming>Flow_1vc3oj4</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Activity_ReceivePolicySigned" name="Receive Policy Signed">
+      <bpmn:outgoing>Flow_0bzastb</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_0bzastb" sourceRef="Activity_ReceivePolicySigned" targetRef="Event_EndPolicyProcess" />
+    <bpmn:sequenceFlow id="Flow_0ozrh0z" name="Yes" sourceRef="Gateway_CheckRequest" targetRef="Activity_PreparePolicyProposal" />
+    <bpmn:task id="Activity_PreparePolicyProposal" name="Prepare Policy Proposal">
+      <bpmn:incoming>Flow_0ozrh0z</bpmn:incoming>
+      <bpmn:outgoing>Flow_EvaluateTo7DayTimer</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:intermediateCatchEvent id="Event_7DayDeadline" name="7 days (Proposal Deadline)">
+      <bpmn:incoming>Flow_EvaluateTo7DayTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_0c6v84m</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_7Days">
+        <bpmn:timeDuration>P7D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Activity_SendPolicyProposal" name="Send Policy Proposal">
+      <bpmn:incoming>Flow_0c6v84m</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_0c6v84m" sourceRef="Event_7DayDeadline" targetRef="Activity_SendPolicyProposal" />
+    <bpmn:task id="Activity_ReceiveRequest" name="Receive Request">
+      <bpmn:outgoing>Flow_14oelle</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_CheckRequest" name="Request Complete?">
+      <bpmn:incoming>Flow_14oelle</bpmn:incoming>
+      <bpmn:outgoing>Flow_1vc3oj4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0ozrh0z</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_14oelle" sourceRef="Activity_ReceiveRequest" targetRef="Gateway_CheckRequest" />
+    <bpmn:endEvent id="Event_EndPolicyProcess" name="End Policy Process">
+      <bpmn:incoming>Flow_0bzastb</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1wtcrjj">
+      <bpmndi:BPMNShape id="Participant_Policyholder_di" bpmnElement="Participant_Policyholder" isHorizontal="true">
+        <dc:Bounds x="190" y="69" width="1300" height="240" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_5DayDeadline_di" bpmnElement="Event_5DayDeadline">
+        <dc:Bounds x="1012" y="169" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="999" y="212" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ProvideAdditionalInfo_di" bpmnElement="Activity_ProvideAdditionalInfo">
+        <dc:Bounds x="660" y="147" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReceiveProposal_di" bpmnElement="Activity_ReceiveProposal">
+        <dc:Bounds x="890" y="147" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_StartPolicyholder_di" bpmnElement="Event_StartPolicyholder">
+        <dc:Bounds x="262" y="169" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="237" y="212" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SubmitRequestPolicy_di" bpmnElement="Activity_SubmitRequestPolicy">
+        <dc:Bounds x="360" y="147" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendPolicySigned_di" bpmnElement="Activity_SendPolicySigned">
+        <dc:Bounds x="1210" y="94" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_PrepareNewProposal_di" bpmnElement="Activity_PrepareNewProposal">
+        <dc:Bounds x="1210" y="201" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CheckSign_di" bpmnElement="Gateway_CheckSign" isMarkerVisible="true">
+        <dc:Bounds x="1085" y="162" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1074" y="143" width="73" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ReceiveProposal_di" bpmnElement="Flow_ReceiveProposal">
+        <di:waypoint x="990" y="187" />
+        <di:waypoint x="1012" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StartToSubmitRequestPolicy_di" bpmnElement="Flow_StartToSubmitRequestPolicy">
+        <di:waypoint x="298" y="187" />
+        <di:waypoint x="360" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_190bwvj_di" bpmnElement="Flow_190bwvj">
+        <di:waypoint x="1048" y="187" />
+        <di:waypoint x="1085" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0k1chus_di" bpmnElement="Flow_0k1chus">
+        <di:waypoint x="1135" y="187" />
+        <di:waypoint x="1160" y="187" />
+        <di:waypoint x="1160" y="134" />
+        <di:waypoint x="1210" y="134" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1166" y="158" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1k4yc6b_di" bpmnElement="Flow_1k4yc6b">
+        <di:waypoint x="1135" y="187" />
+        <di:waypoint x="1160" y="187" />
+        <di:waypoint x="1160" y="241" />
+        <di:waypoint x="1210" y="241" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1168" y="211" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_InsuranceCompany_di" bpmnElement="Participant_InsuranceCompany" isHorizontal="true">
+        <dc:Bounds x="190" y="340" width="1300" height="220" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_RequestMoreInfo_di" bpmnElement="Activity_RequestMoreInfo">
+        <dc:Bounds x="660" y="350" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReceivePolicySigned_di" bpmnElement="Activity_ReceivePolicySigned">
+        <dc:Bounds x="1290" y="391" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_PreparePolicyProposal_di" bpmnElement="Activity_PreparePolicyProposal">
+        <dc:Bounds x="660" y="444" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_7DayDeadline_di" bpmnElement="Event_7DayDeadline">
+        <dc:Bounds x="812" y="466" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="790" y="509" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendPolicyProposal_di" bpmnElement="Activity_SendPolicyProposal">
+        <dc:Bounds x="890" y="444" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ReceiveRequest_di" bpmnElement="Activity_ReceiveRequest">
+        <dc:Bounds x="360" y="396" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CheckRequest_di" bpmnElement="Gateway_CheckRequest" isMarkerVisible="true">
+        <dc:Bounds x="505" y="411" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="503" y="470.5" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_EndPolicyProcess_di" bpmnElement="Event_EndPolicyProcess">
+        <dc:Bounds x="1430" y="413" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1422" y="456" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_EvaluateTo7DayTimer_di" bpmnElement="Flow_EvaluateTo7DayTimer">
+        <di:waypoint x="760" y="484" />
+        <di:waypoint x="812" y="484" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vc3oj4_di" bpmnElement="Flow_1vc3oj4">
+        <di:waypoint x="555" y="436" />
+        <di:waypoint x="590" y="436" />
+        <di:waypoint x="590" y="390" />
+        <di:waypoint x="660" y="390" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="596" y="403" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0bzastb_di" bpmnElement="Flow_0bzastb">
+        <di:waypoint x="1390" y="431" />
+        <di:waypoint x="1430" y="431" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ozrh0z_di" bpmnElement="Flow_0ozrh0z">
+        <di:waypoint x="555" y="436" />
+        <di:waypoint x="590" y="436" />
+        <di:waypoint x="590" y="484" />
+        <di:waypoint x="660" y="484" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="595" y="453" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0c6v84m_di" bpmnElement="Flow_0c6v84m">
+        <di:waypoint x="848" y="484" />
+        <di:waypoint x="890" y="484" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14oelle_di" bpmnElement="Flow_14oelle">
+        <di:waypoint x="460" y="436" />
+        <di:waypoint x="505" y="436" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SubmitRequestToInsuranceCompany_di" bpmnElement="Flow_SubmitRequestToInsuranceCompany">
+        <di:waypoint x="410" y="227" />
+        <di:waypoint x="410" y="396" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ResendAdditionalInfo_di" bpmnElement="Flow_ResendAdditionalInfo">
+        <di:waypoint x="660" y="187" />
+        <di:waypoint x="550" y="187" />
+        <di:waypoint x="550" y="260" />
+        <di:waypoint x="430" y="260" />
+        <di:waypoint x="430" y="396" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RequestMoreInfo_di" bpmnElement="Flow_RequestMoreInfo">
+        <di:waypoint x="710" y="350" />
+        <di:waypoint x="710" y="227" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SendProposal_di" bpmnElement="Flow_SendProposal">
+        <di:waypoint x="940" y="444" />
+        <di:waypoint x="940" y="227" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SendPolicySigned_di" bpmnElement="Flow_SendPolicySigned">
+        <di:waypoint x="1310" y="134" />
+        <di:waypoint x="1340" y="134" />
+        <di:waypoint x="1340" y="391" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PrepareNewProposal_di" bpmnElement="Flow_PrepareNewProposal">
+        <di:waypoint x="1260" y="281" />
+        <di:waypoint x="1260" y="550" />
+        <di:waypoint x="710" y="550" />
+        <di:waypoint x="710" y="524" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
