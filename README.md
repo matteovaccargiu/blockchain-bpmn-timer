@@ -12,11 +12,11 @@ blockchain-bpmn-timer
 ├── src/
 │   └── BPMNParser.java              # Main BPMN→Solidity generator (interactive CLI)
 ├── contracts/
-│   ├── CitizenMunicipality.sol      # Generated municipal process contract
-│   ├── PolicyholderInsurance.sol    # Generated insurance process contract
-│   └── StudentProfessor.sol         # Generated academic process contract
+│   ├── CitizenMunicipality_timeDate.sol       # Generated municipal process contract
+│   ├── PolicyholderInsurance.sol              # Generated insurance process contract
+│   └── StudentProfessor.sol                   # Generated academic process contract
 ├── scenarios/
-│   ├── CitizenMunicipality.bpmn               # Municipal document request
+│   ├── CitizenMunicipality_timeDate.bpmn      # Municipal document request
 │   ├── PolicyholderInsuranceCompany.bpmn      # Insurance policy application
 │   └── StudentProfessorSecretary.bpmn         # Academic examination process
 └── README.md                        # You are here
